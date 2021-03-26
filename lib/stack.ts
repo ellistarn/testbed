@@ -40,9 +40,8 @@ export class TestbedStack extends Stack {
     })
 
     Array.of(
-      '../config/flux/crds.yaml',
-      '../config/flux/operator.yaml',
-      '../config/flux/repository.yaml',
+      '../config/flux-system/components.yaml',
+      '../config/flux-system/sync.yaml',
     ).forEach((manifest, i) => {
       cluster.addManifest(`Manifest-${i}`, loadAll(readFileSync(join(__dirname, manifest), 'utf8')))
     })
