@@ -1,0 +1,50 @@
+import { InstanceClass, InstanceSize, InstanceType, Vpc } from '@aws-cdk/aws-ec2'
+import { Cluster, DefaultCapacityType, KubernetesVersion } from '@aws-cdk/aws-eks'
+import { HostedZone, PublicHostedZone, ZoneDelegationRecord } from "@aws-cdk/aws-route53"
+import { Stack, StackProps } from "@aws-cdk/core"
+import { Construct } from "constructs"
+import { readFileSync } from 'fs'
+import { loadAll } from 'js-yaml'
+import { join } from 'path'
+
+export interface TestbedOptions extends StackProps {
+  readonly domain: string
+}
+
+export class TestbedStack extends Stack {
+  constructor(scope: Construct, id: string, options: TestbedOptions) {
+    super(scope, id, options)
+
+    const vpc = new Vpc(this, 'VPC', {
+      cidr: '10.0.0.0/16',
+    })
+
+    const parentZone = HostedZone.fromLookup(this, 'ParentZone', { domainName: options.domain, })
+
+    const zone = new PublicHostedZone(this, 'Zone', {
+      zoneName: `testbed.${parentZone.zoneName}`,
+    })
+
+    new ZoneDelegationRecord(this, 'ZoneDelegation', {
+      zone: parentZone,
+      recordName: zone.zoneName,
+      nameServers: zone.hostedZoneNameServers!,
+    })
+
+    const cluster = new Cluster(this, 'Cluster', {
+      vpc: vpc,
+      defaultCapacity: 0,
+      defaultCapacityInstance: InstanceType.of(InstanceClass.T3, InstanceSize.XLARGE2),
+      defaultCapacityType: DefaultCapacityType.EC2,
+      version: KubernetesVersion.V1_18,
+    })
+
+    Array.of(
+      '../config/flux/crds.yaml',
+      '../config/flux/operator.yaml',
+      '../config/flux/repository.yaml',
+    ).forEach((manifest, i) => {
+      cluster.addManifest(`Manifest-${i}`, loadAll(readFileSync(join(__dirname, manifest), 'utf8')))
+    })
+  }
+}
