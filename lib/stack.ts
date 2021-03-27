@@ -8,6 +8,7 @@ import { loadAll } from 'js-yaml'
 import { join } from 'path'
 
 export interface TestbedOptions extends StackProps {
+  readonly name: string
   readonly domain: string
 }
 
@@ -22,7 +23,7 @@ export class TestbedStack extends Stack {
     const parentZone = HostedZone.fromLookup(this, 'ParentZone', { domainName: options.domain, })
 
     const zone = new PublicHostedZone(this, 'Zone', {
-      zoneName: `testbed.${parentZone.zoneName}`,
+      zoneName: `${options.name}.${parentZone.zoneName}`,
     })
 
     new ZoneDelegationRecord(this, 'ZoneDelegation', {
@@ -32,6 +33,7 @@ export class TestbedStack extends Stack {
     })
 
     const cluster = new Cluster(this, 'Cluster', {
+      clusterName: options.name,
       vpc: vpc,
       defaultCapacity: 0,
       defaultCapacityInstance: InstanceType.of(InstanceClass.T3, InstanceSize.XLARGE2),
@@ -42,8 +44,8 @@ export class TestbedStack extends Stack {
     Array.of(
       '../config/flux-system/components.yaml',
       '../config/flux-system/sync.yaml',
-    ).forEach((manifest, i) => {
-      cluster.addManifest(`Manifest-${i}`, loadAll(readFileSync(join(__dirname, manifest), 'utf8')))
+    ).forEach((file, i) => {
+      cluster.addManifest(`Manifest-${i}`, ...loadAll(readFileSync(join(__dirname, file), 'utf8')))
     })
   }
 }
