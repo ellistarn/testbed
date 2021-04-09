@@ -1,11 +1,8 @@
 import { InstanceClass, InstanceSize, InstanceType, Vpc } from '@aws-cdk/aws-ec2'
-import { Cluster, DefaultCapacityType, KubernetesVersion } from '@aws-cdk/aws-eks'
+import { Cluster, KubernetesVersion } from '@aws-cdk/aws-eks'
 import { HostedZone, PublicHostedZone, ZoneDelegationRecord } from "@aws-cdk/aws-route53"
 import { Stack, StackProps } from "@aws-cdk/core"
 import { Construct } from "constructs"
-import { readFileSync } from 'fs'
-import { loadAll } from 'js-yaml'
-import { join } from 'path'
 
 export interface TestbedOptions extends StackProps {
   readonly name: string
@@ -35,17 +32,31 @@ export class TestbedStack extends Stack {
     const cluster = new Cluster(this, 'Cluster', {
       clusterName: options.name,
       vpc: vpc,
-      defaultCapacity: 0,
       defaultCapacityInstance: InstanceType.of(InstanceClass.T3, InstanceSize.XLARGE2),
-      defaultCapacityType: DefaultCapacityType.EC2,
       version: KubernetesVersion.V1_18,
     })
 
-    Array.of(
-      '../config/flux-system/components.yaml',
-      '../config/flux-system/sync.yaml',
-    ).forEach((file, i) => {
-      cluster.addManifest(`Manifest-${i}`, ...loadAll(readFileSync(join(__dirname, file), 'utf8')))
+    cluster.addHelmChart("karpenter", {
+      chart: "karpenter",
+      release: "karpenter/karpenter",
+      repository: "https://awslabs.github.io/karpenter/charts",
+      createNamespace: true,
+      version: "0.2.0"
     })
+
+    cluster.addHelmChart("cert-manager", {
+      release: "cert-manager",
+      chart: "jetstack/cert-manager",
+      repository: "https://charts.jetstack.io",
+      version: "v1.2.0",
+    })
+
+    // Install flux, which will bootstrap all other components from /config
+    // Array.of(
+    //   '../config/flux-system/components.yaml',
+    //   '../config/flux-system/sync.yaml',
+    // ).forEach((file, i) => {
+    //   cluster.addManifest(`Manifest-${i}`, ...loadAll(readFileSync(join(__dirname, file), 'utf8')))
+    // })
   }
 }
