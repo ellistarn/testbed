@@ -1,14 +1,18 @@
-# Welcome to your CDK Go project!
+# Testbed
+Testbed for testing Kubernetes on EC2.
 
-This is a blank project for Go development with CDK.
+## Prerequisites
+```bash
+# Add to your bashrc
+export CDK_DEFAULT_ACCOUNT=$AWS_ACCOUNT_ID
+export CDK_DEFAULT_REGION=$AWS_DEFAULT_REGION
+```
 
-**NOTICE**: Go support is still in Developer Preview. This implies that APIs may
-change while we address early feedback from the community. We would love to hear
-about your experience through GitHub issues.
-
-## Useful commands
-
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk synth`       emits the synthesized CloudFormation template
- * `go test`         run unit tests
+## Deploy a testbed Cluster
+```bash
+make apply
+```
+## Connect to the testbed Cluster
+```bash
+$(aws cloudformation describe-stacks --stack-name Testbed | jq -r '.Stacks[].Outputs[0].OutputValue')
+```
