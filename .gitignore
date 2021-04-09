@@ -1,5 +1,2 @@
-*.js
-node_modules
-npm-debug.log
-cdk.context.json
 cdk.out
+testbed
