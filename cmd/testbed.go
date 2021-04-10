@@ -10,6 +10,7 @@ import (
 	"github.com/aws/jsii-runtime-go"
 	"github.com/ellistarn/testbed/pkg/addons/certmanager"
 	"github.com/ellistarn/testbed/pkg/addons/clusterapi"
+	"github.com/ellistarn/testbed/pkg/addons/karpenter"
 )
 
 type TestbedStackOptions struct {
@@ -29,7 +30,7 @@ func NewTestbedStack(scope constructs.Construct, id string, props *TestbedStackO
 	})
 
 	certmanager.NewController(stack, "CertManagerController", certmanager.ControllerOptions{Cluster: cluster})
-	// karpenter.NewController(stack, "KarpenterController", karpenter.ControllerOptions{Cluster: cluster})
+	karpenter.NewController(stack, "KarpenterController", karpenter.ControllerOptions{Cluster: cluster})
 	clusterapi.NewController(stack, "ClusterapiController", clusterapi.ControllerOptions{Cluster: cluster})
 	return stack
 }

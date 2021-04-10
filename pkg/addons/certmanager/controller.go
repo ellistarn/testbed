@@ -13,9 +13,13 @@ type ControllerOptions struct {
 func NewController(scope constructs.Construct, id string, options ControllerOptions) {
 	options.Cluster.AddHelmChart(jsii.String("CertManager"), &awseks.HelmChartOptions{
 		Release:         jsii.String("cert-manager"),
+		Namespace:       jsii.String("cert-manager"),
 		Chart:           jsii.String("cert-manager"),
 		Repository:      jsii.String("https://charts.jetstack.io/"),
 		Version:         jsii.String("v1.2.0"),
 		CreateNamespace: jsii.Bool(true),
+		Values: &map[string]interface{}{
+			"installCRDs": true,
+		},
 	})
 }
