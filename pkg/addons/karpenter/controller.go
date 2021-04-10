@@ -26,7 +26,7 @@ func NewController(scope constructs.Construct, id string, options ControllerOpti
 	cloudformationinclude.NewCfnInclude(scope, jsii.String(id), &cloudformationinclude.CfnIncludeProps{
 		TemplateFile: jsii.String(path.RelativeTo("./iam.cfn.yaml")),
 		Parameters: &map[string]interface{}{
-			"ClusterName":                   "hi",// *options.Cluster.ClusterName(),
+			"ClusterName":                   *options.Cluster.ClusterName(),
 			"OpenIDConnectIdentityProvider": *options.Cluster.OpenIdConnectProvider().OpenIdConnectProviderIssuer(),
 		},
 	})
