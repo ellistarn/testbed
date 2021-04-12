@@ -28,17 +28,23 @@ func NewController(scope constructs.Construct, id string, options ControllerOpti
 	// 	},
 	// })
 
-	options.Cluster.AddManifest(jsii.String("Provisioner"), &map[string]interface{}{
-		"apiVersion": "provisioning.karpenter.sh/v1alpha1",
-		"kind":       "Provisioner",
-		"metadata": map[string]interface{}{
-			"name": "default",
-		},
-		"spec": map[string]interface{}{
-			"cluster": map[string]interface{}{
-				"name":     *options.Cluster.ClusterName(),
-				"caBundle": *options.Cluster.ClusterCertificateAuthorityData(),
-				"endpoint": *options.Cluster.ClusterEndpoint(),
+	awseks.NewKubernetesManifest(scope, jsii.String("Provisioner"), &awseks.KubernetesManifestProps{
+		Cluster:   options.Cluster,
+		Overwrite: jsii.Bool(true),
+		Manifest: &[]*map[string]interface{}{
+			{
+				"apiVersion": "provisioning.karpenter.sh/v1alpha1",
+				"kind":       "Provisioner",
+				"metadata": map[string]interface{}{
+					"name": "default",
+				},
+				"spec": map[string]interface{}{
+					"cluster": map[string]interface{}{
+						"name":     *options.Cluster.ClusterName(),
+						"caBundle": *options.Cluster.ClusterCertificateAuthorityData(),
+						"endpoint": *options.Cluster.ClusterEndpoint(),
+					},
+				},
 			},
 		},
 	})

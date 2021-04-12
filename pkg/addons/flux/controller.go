@@ -1,7 +1,6 @@
 package flux
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/aws/aws-cdk-go/awscdk/awseks"
@@ -11,30 +10,57 @@ import (
 )
 
 type ControllerOptions struct {
-	Cluster      awseks.Cluster
-	Repositories []string
+	Cluster awseks.Cluster
+	// SyncRepositories defines a set of github uris where YAML at /config is synced to the cluster
+	SyncRepositories []string
 }
 
 func NewController(scope constructs.Construct, id string, options ControllerOptions) {
 	// Generated with `flux install --export > pkg/addons/flux/controller.yaml`
-	file.ApplyYAML(options.Cluster, file.RelativeTo("./controller.yaml"))
+	file.ApplyYAML(scope, options.Cluster, file.RelativeTo("./controller.yaml"))
 
-	for _, repository := range options.Repositories {
-		fmt.Print(sanitize(repository) + "\n\n")
-		options.Cluster.AddManifest(jsii.String(repository), &map[string]interface{}{
-			"apiVersion": "source.toolkit.fluxcd.io/v1beta1",
-			"kind":       "GitRepository",
-			"metadata": map[string]interface{}{
-				"name": sanitize(repository),
-			},
-			"spec": map[string]interface{}{
-				"interval": "30s",
-				"url":      repository,
+	for _, repository := range options.SyncRepositories {
+		name := sanitize(repository)
+		awseks.NewKubernetesManifest(scope, jsii.String(name), &awseks.KubernetesManifestProps{
+			Cluster:   options.Cluster,
+			Overwrite: jsii.Bool(true),
+			Manifest: &[]*map[string]interface{}{
+				{
+					"apiVersion": "source.toolkit.fluxcd.io/v1beta1",
+					"kind":       "GitRepository",
+					"metadata": map[string]interface{}{
+						"name": name,
+					},
+					"spec": map[string]interface{}{
+						"interval": "30s",
+						"url":      repository,
+						"ref": map[string]interface{}{
+							"branch": "main",
+						},
+					},
+				},
+				{
+					"apiVersion": "kustomize.toolkit.fluxcd.io/v1beta1",
+					"kind":       "Kustomization",
+					"metadata": map[string]interface{}{
+						"name": name,
+					},
+					"spec": map[string]interface{}{
+						"interval": "30s",
+						"path":     "/config",
+						"prune":    true,
+						"sourceRef": map[string]interface{}{
+							"kind": "GitRepository",
+							"name": name,
+						},
+					},
+				},
 			},
 		})
 	}
 }
 
+// sanitize removes characters that do not conform to kubernetes naming requirements
 func sanitize(s string) string {
 	for old, new := range map[string]string{
 		"http://":  "",

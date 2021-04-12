@@ -9,6 +9,7 @@ import (
 	"runtime"
 
 	"github.com/aws/aws-cdk-go/awscdk/awseks"
+	"github.com/aws/constructs-go/constructs/v3"
 	"github.com/aws/jsii-runtime-go"
 	"gopkg.in/yaml.v3"
 )
@@ -21,7 +22,7 @@ func RelativeTo(path string) string {
 
 // ApplyYAML applies the YAML at the provided path to the specified cluster.
 // This function makes @ellistarn very sad.
-func ApplyYAML(cluster awseks.Cluster, path string) {
+func ApplyYAML(scope constructs.Construct, cluster awseks.Cluster, path string) {
 	file, err := os.Open(path)
 	if err != nil {
 		panic(err)
@@ -47,7 +48,11 @@ func ApplyYAML(cluster awseks.Cluster, path string) {
 			continue
 		}
 		// Apply to cluster
-		current := cluster.AddManifest(jsii.String(fmt.Sprint(i)), &resource)
+		current := awseks.NewKubernetesManifest(scope, jsii.String(fmt.Sprint(i)), &awseks.KubernetesManifestProps{
+			Cluster:   cluster,
+			Overwrite: jsii.Bool(true),
+			Manifest:  &[]*map[string]interface{}{&resource},
+		})
 		// Order resource application to ensure dependencies are respected (e.g. namespace creation)
 		if last != nil {
 			current.Node().AddDependency(last)
