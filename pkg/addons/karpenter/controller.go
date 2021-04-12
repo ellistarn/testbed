@@ -11,15 +11,6 @@ type ControllerOptions struct {
 }
 
 func NewController(scope constructs.Construct, id string, options ControllerOptions) {
-	options.Cluster.AddHelmChart(jsii.String(id), &awseks.HelmChartOptions{
-		Chart:           jsii.String("karpenter"),
-		Namespace:       jsii.String("karpenter"),
-		Release:         jsii.String("karpenter"),
-		Repository:      jsii.String("https://awslabs.github.io/karpenter/charts/"),
-		Version:         jsii.String("0.2.1"),
-		CreateNamespace: jsii.Bool(true),
-	})
-
 	// cloudformationinclude.NewCfnInclude(scope, jsii.String(id), &cloudformationinclude.CfnIncludeProps{
 	// 	TemplateFile: jsii.String(path.RelativeTo("./iam.cfn.yaml")),
 	// 	Parameters: &map[string]interface{}{
@@ -27,6 +18,15 @@ func NewController(scope constructs.Construct, id string, options ControllerOpti
 	// 		"OpenIDConnectIdentityProvider": *options.Cluster.OpenIdConnectProvider().OpenIdConnectProviderIssuer(),
 	// 	},
 	// })
+
+	controller := options.Cluster.AddHelmChart(jsii.String(id), &awseks.HelmChartOptions{
+		Chart:           jsii.String("karpenter"),
+		Namespace:       jsii.String("karpenter"),
+		Release:         jsii.String("karpenter"),
+		Repository:      jsii.String("https://awslabs.github.io/karpenter/charts/"),
+		Version:         jsii.String("0.2.1"),
+		CreateNamespace: jsii.Bool(true),
+	})
 
 	awseks.NewKubernetesManifest(scope, jsii.String("Provisioner"), &awseks.KubernetesManifestProps{
 		Cluster:   options.Cluster,
@@ -47,5 +47,5 @@ func NewController(scope constructs.Construct, id string, options ControllerOpti
 				},
 			},
 		},
-	})
+	}).Node().AddDependency(controller) // Controller must be installed first
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/aws/constructs-go/constructs/v3"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/ellistarn/testbed/pkg/utils/file"
+	"github.com/ellistarn/testbed/pkg/utils/kubectl"
 )
 
 type ControllerOptions struct {
@@ -17,7 +18,10 @@ type ControllerOptions struct {
 
 func NewController(scope constructs.Construct, id string, options ControllerOptions) {
 	// Generated with `flux install --export > pkg/addons/flux/controller.yaml`
-	file.ApplyYAML(scope, options.Cluster, file.RelativeTo("./controller.yaml"))
+	controller := kubectl.ApplyFile(scope, id, kubectl.ApplyOptions{
+		Cluster: options.Cluster,
+		FilePath:    file.RelativeTo("./controller.yaml"),
+	})
 
 	for _, repository := range options.SyncRepositories {
 		name := sanitize(repository)
@@ -56,7 +60,7 @@ func NewController(scope constructs.Construct, id string, options ControllerOpti
 					},
 				},
 			},
-		})
+		}).Node().AddDependency(controller)
 	}
 }
 
