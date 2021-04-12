@@ -9,65 +9,67 @@ Parameters:
     Type: String
     Description: "EKS cluster name"
 Resources:
-  KarpenterControllerRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      RoleName: !Sub "KarpenterControllerRole-${ClusterName}"
-      Path: /
-      AssumeRolePolicyDocument: !Sub |
-        {
-          "Version": "2012-10-17",
-          "Statement": [{
-            "Effect": "Allow",
-            "Principal": {
-              "Federated": "arn:aws:iam::${AWS::AccountId}:oidc-provider/${OpenIDConnectIdentityProvider}"
-            },
-            "Action": "sts:AssumeRoleWithWebIdentity",
-            "Condition": {
-              "StringEquals": {
-                "${OpenIDConnectIdentityProvider}:aud": "sts.${AWS::URLSuffix}",
-                "${OpenIDConnectIdentityProvider}:sub": "system:serviceaccount:karpenter:karpenter"
-              }
-            }
-          }]
-        }
-  KarpenterControllerPolicy:
-    Type: "AWS::IAM::Policy"
-    Properties:
-      PolicyName: !Sub "KarpenterControllerPolicy-${ClusterName}"
-      Roles:
-        -
-          Ref: "KarpenterControllerRole"
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Resource: "*"
-            Action:
-              # Write Operations
-              - "ec2:CreateLaunchTemplate"
-              - "ec2:CreateFleet"
-              - "ec2:RunInstances"
-              - "ec2:CreateTags"
-              - "iam:PassRole"
-              - "ec2:TerminateInstances"
-              # Read Operations
-              - "ec2:DescribeLaunchTemplates"
-              - "ec2:DescribeInstances"
-              - "ec2:DescribeSecurityGroups"
-              - "ec2:DescribeSubnets"
-              - "ec2:DescribeInstanceTypes"
-              - "ec2:DescribeInstanceTypeOfferings"
-              - "ec2:DescribeAvailabilityZones"
-              - "iam:GetInstanceProfile"
-              - "ssm:GetParameter"
-  KarpenterNodeInstanceProfile:
-    Type: "AWS::IAM::InstanceProfile"
-    Properties:
-      InstanceProfileName: !Sub "KarpenterNodeInstanceProfile-${ClusterName}"
-      Path: "/"
-      Roles:
-        - Ref: "KarpenterNodeInstanceRole"
+  # KarpenterControllerRole:
+  #   Type: "AWS::IAM::Role"
+  #   Properties:
+  #     RoleName: !Sub "KarpenterControllerRole-${ClusterName}"
+  #     Path: /
+
+  #     # Removed the following due to https://github.com/aws/aws-cdk/issues/14095
+  #     #  "Condition": {
+  #     #         "StringEquals": {
+  #     #           "${OpenIDConnectIdentityProvider}:aud": "sts.${AWS::URLSuffix}",
+  #     #           "${OpenIDConnectIdentityProvider}:sub": "system:serviceaccount:karpenter:karpenter"
+  #     #         }
+  #     #       }
+  #     AssumeRolePolicyDocument: !Sub |
+  #       {
+  #         "Version": "2012-10-17",
+  #         "Statement": [{
+  #           "Effect": "Allow",
+  #           "Principal": {
+  #             "Federated": "arn:aws:iam::${AWS::AccountId}:oidc-provider/${OpenIDConnectIdentityProvider}"
+  #           },
+  #           "Action": "sts:AssumeRoleWithWebIdentity"
+  #         }]
+  #       }
+  # KarpenterControllerPolicy:
+  #   Type: "AWS::IAM::Policy"
+  #   Properties:
+  #     PolicyName: !Sub "KarpenterControllerPolicy-${ClusterName}"
+  #     Roles:
+  #       -
+  #         Ref: "KarpenterControllerRole"
+  #     PolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: Allow
+  #           Resource: "*"
+  #           Action:
+  #             # Write Operations
+  #             - "ec2:CreateLaunchTemplate"
+  #             - "ec2:CreateFleet"
+  #             - "ec2:RunInstances"
+  #             - "ec2:CreateTags"
+  #             - "iam:PassRole"
+  #             - "ec2:TerminateInstances"
+  #             # Read Operations
+  #             - "ec2:DescribeLaunchTemplates"
+  #             - "ec2:DescribeInstances"
+  #             - "ec2:DescribeSecurityGroups"
+  #             - "ec2:DescribeSubnets"
+  #             - "ec2:DescribeInstanceTypes"
+  #             - "ec2:DescribeInstanceTypeOfferings"
+  #             - "ec2:DescribeAvailabilityZones"
+  #             - "iam:GetInstanceProfile"
+  #             - "ssm:GetParameter"
+  # KarpenterNodeInstanceProfile:
+  #   Type: "AWS::IAM::InstanceProfile"
+  #   Properties:
+  #     InstanceProfileName: !Sub "KarpenterNodeInstanceProfile-${ClusterName}"
+  #     Path: "/"
+  #     Roles:
+  #       - Ref: "KarpenterNodeInstanceRole"
   KarpenterNodeInstanceRole:
     Type: "AWS::IAM::Role"
     Properties:
